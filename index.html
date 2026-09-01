@@ -1709,7 +1709,10 @@
       const btn = installBtn();
       if(!btn) return;
       if(!window.__facAppUnlocked) return; // só depois do login
-      if(isStandaloneDisplay() || alreadyInstalledFlag() || !isInStandaloneCapableBrowser()) return;
+      // Só fica invisível quando o app já está aberto instalado (modo
+      // standalone). Na web (navegador), a opção continua sempre visível,
+      // mesmo que o usuário já tenha instalado antes em outro momento.
+      if(isStandaloneDisplay() || !isInStandaloneCapableBrowser()) return;
       btn.style.display = 'inline-flex';
     }
 
