@@ -406,16 +406,6 @@
       </div>
     </section>
 
-    <!-- ===================== MÃO DE OBRA ===================== -->
-    <section class="py-6 border-b print-divider" style="border-color:var(--border-fine)">
-      <h2 class="metal-text text-lg sm:text-xl font-semibold tracking-wide mb-3">Mão de Obra</h2>
-      <div class="field-line pb-1 px-3 py-2 max-w-[240px]">
-        <label class="block text-[10px] uppercase tracking-widest mb-0.5" style="color:var(--label-gray)">Valor da Mão de Obra</label>
-        <input id="laborValue" type="text" inputmode="decimal" placeholder="0,00" class="w-full text-sm sm:text-base font-medium touch-target">
-      </div>
-      <p class="no-print text-[11px] mt-2" style="color:var(--label-gray)">Este valor é somado ao total e aparece no recibo, antes da lista de peças.</p>
-    </section>
-
     <!-- ===================== SERVIÇO TERCEIRIZADO (OPCIONAL) ===================== -->
     <section class="py-6 border-b print-divider" style="border-color:var(--border-fine)">
       <div class="flex items-center justify-between mb-3">
@@ -545,11 +535,10 @@
     clientName: "",
     clientPhone: "",
     clientAddress: "",
-    laborValue: 0,
     totalCardManual: 0,
     notes: "",
     items: [
-      { desc: "", qty: 1, cash: 0 }
+      { desc: "", qty: 1, cash: 0, labor: 0 }
     ],
     outsourcedItems: []
   });
@@ -628,13 +617,13 @@
       card.className = 'print-divider rounded-xl px-3 sm:px-4 py-3';
       card.style.border = '1px solid var(--border-fine)';
 
-      const lineTotal = (item.qty || 0) * (item.cash || 0);
+      const lineTotal = (item.qty || 0) * (item.cash || 0) + (item.labor || 0);
 
       card.innerHTML = `
         <div class="flex items-start justify-between gap-3 mb-2">
           <span class="text-xs font-semibold shrink-0 pt-2" style="color:var(--label-gray)">${String(idx+1).padStart(2,'0')}</span>
           <div class="flex-1">
-            <label class="block text-[10px] uppercase tracking-widest mb-0.5" style="color:var(--label-gray)">Descrição</label>
+            <label class="block text-[10px] uppercase tracking-widest mb-0.5" style="color:var(--label-gray)">Nome da Peça</label>
             <textarea rows="1" data-field="desc" data-idx="${idx}"
               class="w-full text-sm leading-snug px-2 py-1.5 rounded touch-target field-line"
               placeholder="Ex: Espelho bisotado 4mm 60x80cm">${escapeHtml(item.desc)}</textarea>
@@ -642,16 +631,22 @@
           <button data-remove="${idx}" class="no-print touch-target rounded-lg hover:bg-zinc-800/60 text-red-400 text-lg leading-none shrink-0">🗑</button>
         </div>
 
-        <div class="grid grid-cols-3 gap-2 sm:gap-3 pl-0 sm:pl-7">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 pl-0 sm:pl-7">
           <div>
-            <label class="block text-[10px] uppercase tracking-widest mb-0.5" style="color:var(--label-gray)">Qtd.</label>
+            <label class="block text-[10px] uppercase tracking-widest mb-0.5" style="color:var(--label-gray)">Unidades</label>
             <input type="text" inputmode="numeric" pattern="[0-9]*" data-field="qty" data-idx="${idx}"
               value="${item.qty}" class="w-full text-center text-sm px-1 py-1.5 rounded touch-target field-line">
           </div>
           <div>
-            <label class="block text-[10px] uppercase tracking-widest mb-0.5" style="color:var(--label-gray)">Valor Unit.</label>
+            <label class="block text-[10px] uppercase tracking-widest mb-0.5" style="color:var(--label-gray)">Valor da Peça</label>
             <input type="text" inputmode="decimal" data-field="cash" data-idx="${idx}"
               value="${formatDecimalInput(item.cash)}" placeholder="0,00"
+              class="w-full text-right text-sm px-1 py-1.5 rounded touch-target field-line">
+          </div>
+          <div>
+            <label class="block text-[10px] uppercase tracking-widest mb-0.5" style="color:var(--label-gray)">Mão de Obra</label>
+            <input type="text" inputmode="decimal" data-field="labor" data-idx="${idx}"
+              value="${formatDecimalInput(item.labor)}" placeholder="0,00"
               class="w-full text-right text-sm px-1 py-1.5 rounded touch-target field-line">
           </div>
           <div>
@@ -693,11 +688,20 @@
       });
     });
 
+    list.querySelectorAll('input[data-field="labor"]').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const idx = parseInt(inp.dataset.idx, 10);
+        state.items[idx].labor = parseDecimal(inp.value);
+        recalc();
+        saveState();
+      });
+    });
+
     list.querySelectorAll('[data-remove]').forEach(btn => {
       btn.addEventListener('click', () => {
         const idx = parseInt(btn.dataset.remove, 10);
         if(state.items.length === 1){
-          state.items[0] = { desc:"", qty:1, cash:0 };
+          state.items[0] = { desc:"", qty:1, cash:0, labor:0 };
         } else {
           state.items.splice(idx, 1);
         }
@@ -726,19 +730,32 @@
       card.className = 'print-divider rounded-xl px-3 sm:px-4 py-3';
       card.style.border = '1px solid var(--border-fine)';
 
-      const partsTotal = item.partsList.reduce((s, p) => s + (p.value || 0), 0);
-      const subtotal = (item.labor || 0) + partsTotal;
+      const partsTotal = item.partsList.reduce((s, p) => s + (p.value || 0) + (p.labor || 0), 0);
+      const subtotal = partsTotal;
 
       const partsRowsHtml = item.partsList.map((p, pIdx) => `
-        <div class="flex items-center gap-2 mb-1.5" data-part-row="${pIdx}">
-          <input type="text" data-field="partName" data-idx="${idx}" data-part-idx="${pIdx}"
-            value="${escapeHtml(p.name || '')}"
-            class="flex-1 min-w-0 text-sm px-2 py-1.5 rounded touch-target field-line"
-            placeholder="Ex: Bomba d'água, Kit de embreagem...">
-          <input type="text" inputmode="decimal" data-field="partValue" data-idx="${idx}" data-part-idx="${pIdx}"
-            value="${formatDecimalInput(p.value)}" placeholder="0,00"
-            class="w-24 shrink-0 text-right text-sm px-1 py-1.5 rounded touch-target field-line">
-          <button data-remove-part="${idx}:${pIdx}" class="no-print touch-target rounded-lg hover:bg-zinc-800/60 text-red-400 text-base leading-none shrink-0">🗑</button>
+        <div class="mb-2 pb-2" style="border-bottom:1px dashed var(--border-fine)" data-part-row="${pIdx}">
+          <div class="flex items-center gap-2 mb-1.5">
+            <input type="text" data-field="partName" data-idx="${idx}" data-part-idx="${pIdx}"
+              value="${escapeHtml(p.name || '')}"
+              class="flex-1 min-w-0 text-sm px-2 py-1.5 rounded touch-target field-line"
+              placeholder="Nome da peça — Ex: Bomba d'água, Kit de embreagem...">
+            <button data-remove-part="${idx}:${pIdx}" class="no-print touch-target rounded-lg hover:bg-zinc-800/60 text-red-400 text-base leading-none shrink-0">🗑</button>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[9px] uppercase tracking-widest mb-0.5" style="color:var(--label-gray)">Valor da Peça</label>
+              <input type="text" inputmode="decimal" data-field="partValue" data-idx="${idx}" data-part-idx="${pIdx}"
+                value="${formatDecimalInput(p.value)}" placeholder="0,00"
+                class="w-full text-right text-sm px-1 py-1.5 rounded touch-target field-line">
+            </div>
+            <div>
+              <label class="block text-[9px] uppercase tracking-widest mb-0.5" style="color:var(--label-gray)">Mão de Obra</label>
+              <input type="text" inputmode="decimal" data-field="partLabor" data-idx="${idx}" data-part-idx="${pIdx}"
+                value="${formatDecimalInput(p.labor)}" placeholder="0,00"
+                class="w-full text-right text-sm px-1 py-1.5 rounded touch-target field-line">
+            </div>
+          </div>
         </div>
       `).join('');
 
@@ -761,13 +778,6 @@
             value="${escapeHtml(item.company || '')}"
             class="w-full text-sm px-2 py-1.5 rounded touch-target field-line"
             placeholder="Ex: Nome da empresa prestadora do serviço">
-        </div>
-
-        <div class="pl-0 sm:pl-7 mb-2">
-          <label class="block text-[10px] uppercase tracking-widest mb-0.5" style="color:var(--label-gray)">Mão de Obra</label>
-          <input type="text" inputmode="decimal" data-field="labor" data-idx="${idx}"
-            value="${formatDecimalInput(item.labor)}" placeholder="0,00"
-            class="w-32 text-right text-sm px-1 py-1.5 rounded touch-target field-line">
         </div>
 
         <div class="pl-0 sm:pl-7 mb-2">
@@ -806,15 +816,6 @@
       });
     });
 
-    list.querySelectorAll('input[data-field="labor"]').forEach(inp => {
-      inp.addEventListener('input', () => {
-        const idx = parseInt(inp.dataset.idx, 10);
-        state.outsourcedItems[idx].labor = parseDecimal(inp.value);
-        recalcOutsourced();
-        saveState();
-      });
-    });
-
     list.querySelectorAll('input[data-field="partName"]').forEach(inp => {
       inp.addEventListener('input', () => {
         const idx = parseInt(inp.dataset.idx, 10);
@@ -835,11 +836,21 @@
       });
     });
 
+    list.querySelectorAll('input[data-field="partLabor"]').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const idx = parseInt(inp.dataset.idx, 10);
+        const pIdx = parseInt(inp.dataset.partIdx, 10);
+        state.outsourcedItems[idx].partsList[pIdx].labor = parseDecimal(inp.value);
+        recalcOutsourced();
+        saveState();
+      });
+    });
+
     list.querySelectorAll('[data-add-part]').forEach(btn => {
       btn.addEventListener('click', () => {
         const idx = parseInt(btn.dataset.addPart, 10);
         if(!Array.isArray(state.outsourcedItems[idx].partsList)) state.outsourcedItems[idx].partsList = [];
-        state.outsourcedItems[idx].partsList.push({ name:'', value:0 });
+        state.outsourcedItems[idx].partsList.push({ name:'', value:0, labor:0 });
         renderOutsourced();
         recalcOutsourced();
         saveState();
@@ -870,8 +881,8 @@
   function recalcOutsourced(){
     let totalOutsourced = 0;
     (state.outsourcedItems || []).forEach((item, idx) => {
-      const partsTotal = (item.partsList || []).reduce((s, p) => s + (p.value || 0), 0);
-      const sub = (item.labor || 0) + partsTotal;
+      const partsTotal = (item.partsList || []).reduce((s, p) => s + (p.value || 0) + (p.labor || 0), 0);
+      const sub = partsTotal;
       totalOutsourced += sub;
       const cell = document.querySelector(`[data-line-outsourced="${idx}"]`);
       if(cell) cell.textContent = currency(sub);
@@ -885,15 +896,14 @@
   // ---------- Totais consolidados (Orçamento próprio + Terceirizado) ----------
   function computeTotalCash(){
     let total = 0;
-    state.items.forEach(item => { total += (item.qty || 0) * (item.cash || 0); });
-    total += (state.laborValue || 0);
+    state.items.forEach(item => { total += (item.qty || 0) * (item.cash || 0) + (item.labor || 0); });
     return total;
   }
 
   function computeTotalOutsourced(){
     return (state.outsourcedItems || []).reduce((sum, item) => {
-      const partsTotal = (item.partsList || []).reduce((s, p) => s + (p.value || 0), 0);
-      return sum + (item.labor || 0) + partsTotal;
+      const partsTotal = (item.partsList || []).reduce((s, p) => s + (p.value || 0) + (p.labor || 0), 0);
+      return sum + partsTotal;
     }, 0);
   }
 
@@ -913,13 +923,11 @@
     let totalCash = 0;
 
     state.items.forEach((item, idx) => {
-      const lc = (item.qty || 0) * (item.cash || 0);
+      const lc = (item.qty || 0) * (item.cash || 0) + (item.labor || 0);
       totalCash += lc;
       const cCell = document.querySelector(`[data-line-cash="${idx}"]`);
       if(cCell) cCell.textContent = currency(lc);
     });
-
-    totalCash += (state.laborValue || 0);
 
     el('totalCash').textContent = currency(totalCash);
     updateTotalGeral();
@@ -1069,28 +1077,6 @@
       }
     });
 
-    // ---- Mão de Obra (aparece antes da lista de peças) ----
-    if(state.laborValue && state.laborValue > 0){
-      blocks.push({
-        height: 40,
-        draw(ctx, y){
-          ctx.fillStyle = '#71717a'; ctx.font = '700 9px Arial, sans-serif';
-          ctx.textAlign = 'left';
-          ctx.fillText('MÃO DE OBRA', padX, y + 10);
-          ctx.fillStyle = '#18181b'; ctx.font = '700 14px Arial, sans-serif';
-          ctx.textAlign = 'right';
-          ctx.fillText(currency(state.laborValue), W - padX, y + 12);
-          ctx.textAlign = 'left';
-
-          ctx.strokeStyle = '#e4e4e7';
-          ctx.beginPath();
-          ctx.moveTo(padX, y + 30);
-          ctx.lineTo(W - padX, y + 30);
-          ctx.stroke();
-        }
-      });
-    }
-
     // ---- Cabeçalho da tabela de itens ----
     blocks.push({
       height: 30,
@@ -1099,9 +1085,10 @@
         ctx.textAlign = 'left';
         ctx.fillText('DESCRIÇÃO', padX, y + 16);
         ctx.textAlign = 'center';
-        ctx.fillText('QTD', W - padX - 160, y + 16);
+        ctx.fillText('QTD', W - padX - 230, y + 16);
         ctx.textAlign = 'right';
-        ctx.fillText('UNIT.', W - padX - 70, y + 16);
+        ctx.fillText('UNIT.', W - padX - 150, y + 16);
+        ctx.fillText('M.OBRA', W - padX - 70, y + 16);
         ctx.fillText('TOTAL', W - padX, y + 16);
         ctx.textAlign = 'left';
       }
@@ -1111,9 +1098,9 @@
     let totalCash = 0;
     ctx.font = '400 13px Arial, sans-serif';
     state.items.forEach(item => {
-      const descLines = wrapCanvasText(ctx, item.desc || '(sem descrição)', contentW - 190);
+      const descLines = wrapCanvasText(ctx, item.desc || '(sem descrição)', contentW - 260);
       const rowH = Math.max(descLines.length * 17, 34) + 18;
-      const lineTotal = (item.qty || 0) * (item.cash || 0);
+      const lineTotal = (item.qty || 0) * (item.cash || 0) + (item.labor || 0);
       totalCash += lineTotal;
 
       blocks.push({
@@ -1125,9 +1112,10 @@
           descLines.forEach((line, i) => ctx.fillText(line, padX, y + 14 + i * 17));
 
           ctx.textAlign = 'center';
-          ctx.fillText(String(item.qty || 0), W - padX - 160, y + 14);
+          ctx.fillText(String(item.qty || 0), W - padX - 230, y + 14);
           ctx.textAlign = 'right';
-          ctx.fillText(currency(item.cash || 0), W - padX - 70, y + 14);
+          ctx.fillText(currency(item.cash || 0), W - padX - 150, y + 14);
+          ctx.fillText(currency(item.labor || 0), W - padX - 70, y + 14);
           ctx.font = '700 13px Arial, sans-serif';
           ctx.fillText(currency(lineTotal), W - padX, y + 14);
           ctx.textAlign = 'left';
@@ -1140,8 +1128,6 @@
         }
       });
     });
-
-    totalCash += (state.laborValue || 0);
 
     // ---- Total à Vista (próprio) ----
     blocks.push({
@@ -1183,7 +1169,6 @@
 
           ctx.fillStyle = '#71717a'; ctx.font = '700 10px Arial, sans-serif';
           ctx.textAlign = 'right';
-          ctx.fillText('M. OBRA', W - padX - 90, y + 24);
           ctx.fillText('SUBTOTAL', W - padX, y + 24);
           ctx.textAlign = 'left';
         }
@@ -1194,18 +1179,22 @@
         const descLines = wrapCanvasText(ctx, item.type || '(sem descrição)', contentW - 180);
         const hasCompany = !!(item.company && item.company.trim());
         const companyLines = hasCompany ? wrapCanvasText(ctx, 'Empresa: ' + item.company, contentW - 180) : [];
-        // Cada peça vira uma linha própria: nome à esquerda, valor à direita
+        // Cada peça vira uma linha própria: nome + mão de obra à esquerda, valor total (peça + m.obra) à direita
         const partRows = partsList
-          .filter(p => (p.name && p.name.trim()) || (p.value || 0) > 0)
-          .map(p => ({
-            lines: wrapCanvasText(ctx, 'Peça: ' + (p.name && p.name.trim() ? p.name : '(sem nome)'), contentW - 260),
-            value: p.value || 0
-          }));
-        const partsTotal = partsList.reduce((s, p) => s + (p.value || 0), 0);
+          .filter(p => (p.name && p.name.trim()) || (p.value || 0) > 0 || (p.labor || 0) > 0)
+          .map(p => {
+            const label = 'Peça: ' + (p.name && p.name.trim() ? p.name : '(sem nome)') +
+              '  |  Peça: ' + currency(p.value || 0) + '  |  M.Obra: ' + currency(p.labor || 0);
+            return {
+              lines: wrapCanvasText(ctx, label, contentW - 260),
+              value: (p.value || 0) + (p.labor || 0)
+            };
+          });
+        const partsTotal = partsList.reduce((s, p) => s + (p.value || 0) + (p.labor || 0), 0);
         const partsLineCount = partRows.reduce((s, r) => s + r.lines.length, 0);
         const textLineCount = descLines.length + companyLines.length + partsLineCount;
         const rowH = Math.max(textLineCount * 17, 34) + 18;
-        const subtotal = (item.labor || 0) + partsTotal;
+        const subtotal = partsTotal;
         totalOutsourced += subtotal;
 
         blocks.push({
@@ -1240,7 +1229,6 @@
             });
 
             ctx.textAlign = 'right';
-            ctx.fillText(currency(item.labor || 0), W - padX - 90, y + 14);
             ctx.font = '700 13px Arial, sans-serif';
             ctx.fillText(currency(subtotal), W - padX, y + 14);
             ctx.textAlign = 'left';
@@ -1472,7 +1460,6 @@
     bindSimpleField('clientName', 'clientName', false);
     bindSimpleField('clientPhone', 'clientPhone', false);
     bindSimpleField('clientAddress', 'clientAddress', false);
-    bindSimpleField('laborValue', 'laborValue', true);
     bindSimpleField('totalCardManual', 'totalCardManual', true);
 
     const notesTa = el('notes');
@@ -1486,7 +1473,7 @@
     });
 
     el('addRowBtn').addEventListener('click', () => {
-      state.items.push({ desc:"", qty:1, cash:0 });
+      state.items.push({ desc:"", qty:1, cash:0, labor:0 });
       renderItems();
       recalc();
       saveState();
@@ -1494,7 +1481,7 @@
 
     el('addOutsourcedBtn').addEventListener('click', () => {
       if(!state.outsourcedItems) state.outsourcedItems = [];
-      state.outsourcedItems.push({ type:"", company:"", labor:0, partsList:[] });
+      state.outsourcedItems.push({ type:"", company:"", partsList:[] });
       renderOutsourced();
       recalcOutsourced();
       saveState();
@@ -1522,7 +1509,6 @@
     el('clientName').value = state.clientName;
     el('clientPhone').value = state.clientPhone;
     el('clientAddress').value = state.clientAddress;
-    el('laborValue').value = formatDecimalInput(state.laborValue);
     el('totalCardManual').value = formatDecimalInput(state.totalCardManual);
     el('notes').value = state.notes;
     renderItems();
@@ -1709,10 +1695,7 @@
       const btn = installBtn();
       if(!btn) return;
       if(!window.__facAppUnlocked) return; // só depois do login
-      // Só fica invisível quando o app já está aberto instalado (modo
-      // standalone). Na web (navegador), a opção continua sempre visível,
-      // mesmo que o usuário já tenha instalado antes em outro momento.
-      if(isStandaloneDisplay() || !isInStandaloneCapableBrowser()) return;
+      if(isStandaloneDisplay() || alreadyInstalledFlag() || !isInStandaloneCapableBrowser()) return;
       btn.style.display = 'inline-flex';
     }
 
