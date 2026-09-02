@@ -91,6 +91,15 @@
 
   .touch-target{ min-height:44px; min-width:44px; }
 
+  /* ===== LABELS DE CAMPOS DENTRO DOS CARDS (peças / mão de obra / terceirizado) ===== */
+  /* Bem visíveis: branco puro, negrito e leve sombra para destacar sobre o fundo escuro */
+  .label-bright{
+    color:#ffffff !important;
+    font-weight:700;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.85);
+    letter-spacing: 0.08em;
+  }
+
   /* ===== BOTÕES — cromo brilhante com brilho neon ===== */
   .btn-metal{
     background: linear-gradient(180deg,#fff2c2 0%, #ffe98a 30%, #d9a520 55%, #ffe98a 78%, #fff2c2 100%);
@@ -417,8 +426,20 @@
 
       <div id="outsourcedWrap" style="display:none;">
         <div id="outsourcedList" class="space-y-3"></div>
-        <div class="flex justify-end mt-3">
-          <div class="w-full sm:max-w-xs text-right">
+        <p class="no-print text-[11px] mt-2" style="color:var(--label-gray)">Cada empresa terceirizada tem suas peças e sua mão de obra lançadas juntas, no mesmo cartão — nada fica separado.</p>
+
+        <!-- ===== RESUMO CONSOLIDADO: peças e mão de obra somadas de TODAS as empresas terceirizadas, sempre separadas por tipo ===== -->
+        <div class="rounded-xl px-3 sm:px-4 py-3 mt-4" style="border:1px solid var(--border-fine); background:rgba(255,255,255,0.02)">
+          <p class="text-[11px] uppercase tracking-widest mb-2 font-semibold" style="color:var(--label-gray)">Resumo Terceirizado (todas as empresas)</p>
+          <div class="flex justify-between items-center py-1">
+            <span class="text-sm label-bright">Total de Peças</span>
+            <span id="totalOutsourcedParts" class="text-sm font-semibold metal-text">R$ 0,00</span>
+          </div>
+          <div class="flex justify-between items-center py-1" style="border-top:1px dashed var(--border-fine)">
+            <span class="text-sm label-bright">Total de Mão de Obra</span>
+            <span id="totalOutsourcedLabor" class="text-sm font-semibold metal-text">R$ 0,00</span>
+          </div>
+          <div class="flex justify-between items-center pt-2 mt-1" style="border-top:1px solid var(--border-fine)">
             <span class="metal-text font-bold text-base">TOTAL TERCEIRIZADO</span>
             <div id="totalOutsourced" class="metal-text font-bold text-xl">R$ 0,00</div>
           </div>
@@ -440,6 +461,32 @@
       <p class="no-print text-[11px] mt-2" style="color:var(--label-gray)">Toque em um campo para digitar. Use vírgula ou ponto para casas decimais.</p>
     </section>
 
+    <!-- ===================== MÃO DE OBRA ===================== -->
+    <section class="py-6 border-b print-divider" style="border-color:var(--border-fine)">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="metal-text text-lg sm:text-xl font-semibold tracking-wide">Mão de Obra</h2>
+        <button id="addLaborBtn" class="no-print btn-metal touch-target px-4 rounded-lg text-sm font-semibold shadow hover:brightness-110 active:brightness-95">
+          + Adicionar Mão de Obra
+        </button>
+      </div>
+
+      <!-- Recapitulação somente leitura de tudo que já foi preenchido em "Itens do Orçamento" -->
+      <div class="mb-4">
+        <p class="no-print text-[11px] mb-2 font-semibold" style="color:var(--label-gray)">Peças já lançadas no orçamento (referência):</p>
+        <div id="laborItemsRecap" class="space-y-2"></div>
+      </div>
+
+      <div id="laborList" class="space-y-3"></div>
+      <p class="no-print text-[11px] mt-2" style="color:var(--label-gray)">Adicione cada trabalho de mão de obra pelo nome (ex: Retífica do motor, Troca de correia dentada...) e o valor cobrado.</p>
+
+      <div class="flex justify-end mt-3">
+        <div class="w-full sm:max-w-xs text-right">
+          <span class="metal-text font-bold text-base">TOTAL MÃO DE OBRA</span>
+          <div id="totalLabor" class="metal-text font-bold text-xl">R$ 0,00</div>
+        </div>
+      </div>
+    </section>
+
     <!-- ===================== TOTAIS ===================== -->
     <section class="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4 border-t print-divider" style="border-color:var(--border-fine)">
       <div class="space-y-3 order-2 lg:order-1">
@@ -459,7 +506,7 @@
         <!-- ===== TOTAL GERAL: soma do orçamento próprio + terceirizado ===== -->
         <div class="rounded-xl px-3 py-2.5 my-2" style="border:1.5px solid transparent; background: linear-gradient(rgba(13,13,16,0.9), rgba(13,13,16,0.9)) padding-box, linear-gradient(115deg, #fff6d8, #f7d75a 30%, #b8860b 55%, #fff2c2 80%) border-box; box-shadow: 0 8px 18px -10px rgba(0,0,0,0.7);">
           <div class="flex items-center justify-between gap-3">
-            <span class="text-[11px] sm:text-xs font-semibold tracking-wide leading-tight" style="color:var(--label-gray)">TOTAL GERAL<br class="hidden sm:block">(Orçamento + Terceirizado)</span>
+            <span class="text-[11px] sm:text-xs font-semibold tracking-wide leading-tight" style="color:var(--label-gray)">TOTAL GERAL<br class="hidden sm:block">(Peças + Mão de Obra + Terceirizado)</span>
             <span id="totalGeral" class="metal-text font-bold text-lg sm:text-xl shrink-0">R$ 0,00</span>
           </div>
         </div>
@@ -540,7 +587,8 @@
     items: [
       { desc: "", qty: 1, cash: 0, labor: 0 }
     ],
-    outsourcedItems: []
+    outsourcedItems: [],
+    laborItems: []
   });
 
   let state = loadState();
@@ -555,6 +603,32 @@
       }
       const merged = Object.assign(defaultState(), parsed);
       merged.docDate = todayISO(); // Data de Emissão sempre igual ao dia atual
+
+      // Garante que toda empresa terceirizada já tenha sua própria lista de
+      // mão de obra (versões antigas do orçamento só tinham partsList).
+      if(Array.isArray(merged.outsourcedItems)){
+        merged.outsourcedItems.forEach(item => {
+          if(!Array.isArray(item.partsList)) item.partsList = [];
+          if(!Array.isArray(item.laborList)) item.laborList = [];
+        });
+      }
+
+      // Migração: versões antigas guardavam a mão de obra terceirizada numa
+      // lista separada, sem vínculo com nenhuma empresa. Para não perder
+      // nenhum valor já lançado, esses valores são movidos para dentro da
+      // primeira empresa terceirizada (ou de uma empresa criada para isso).
+      if(Array.isArray(parsed.outsourcedLaborItems) && parsed.outsourcedLaborItems.length > 0){
+        if(!Array.isArray(merged.outsourcedItems) || merged.outsourcedItems.length === 0){
+          merged.outsourcedItems = [{ type:'', company:'Serviços diversos (importado)', partsList:[], laborList:[] }];
+        }
+        const target = merged.outsourcedItems[0];
+        if(!Array.isArray(target.laborList)) target.laborList = [];
+        parsed.outsourcedLaborItems.forEach(old => {
+          target.laborList.push({ name: old.desc || '', value: old.value || 0 });
+        });
+      }
+      delete merged.outsourcedLaborItems;
+
       return merged;
     }catch(e){
       return defaultState();
@@ -617,13 +691,13 @@
       card.className = 'print-divider rounded-xl px-3 sm:px-4 py-3';
       card.style.border = '1px solid var(--border-fine)';
 
-      const lineTotal = (item.qty || 0) * (item.cash || 0) + (item.labor || 0);
+      const lineTotal = (item.qty || 0) * (item.cash || 0);
 
       card.innerHTML = `
         <div class="flex items-start justify-between gap-3 mb-2">
           <span class="text-xs font-semibold shrink-0 pt-2" style="color:var(--label-gray)">${String(idx+1).padStart(2,'0')}</span>
           <div class="flex-1">
-            <label class="block text-[10px] uppercase tracking-widest mb-0.5" style="color:var(--label-gray)">Nome da Peça</label>
+            <label class="block text-[10px] uppercase tracking-widest mb-0.5 label-bright">Nome da Peça</label>
             <textarea rows="1" data-field="desc" data-idx="${idx}"
               class="w-full text-sm leading-snug px-2 py-1.5 rounded touch-target field-line"
               placeholder="Ex: Espelho bisotado 4mm 60x80cm">${escapeHtml(item.desc)}</textarea>
@@ -631,26 +705,20 @@
           <button data-remove="${idx}" class="no-print touch-target rounded-lg hover:bg-zinc-800/60 text-red-400 text-lg leading-none shrink-0">🗑</button>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 pl-0 sm:pl-7">
+        <div class="grid grid-cols-3 gap-2 sm:gap-3 pl-0 sm:pl-7">
           <div>
-            <label class="block text-[10px] uppercase tracking-widest mb-0.5" style="color:var(--label-gray)">Unidades</label>
+            <label class="block text-[10px] uppercase tracking-widest mb-0.5 label-bright">Unidades</label>
             <input type="text" inputmode="numeric" pattern="[0-9]*" data-field="qty" data-idx="${idx}"
               value="${item.qty}" class="w-full text-center text-sm px-1 py-1.5 rounded touch-target field-line">
           </div>
           <div>
-            <label class="block text-[10px] uppercase tracking-widest mb-0.5" style="color:var(--label-gray)">Valor da Peça</label>
+            <label class="block text-[10px] uppercase tracking-widest mb-0.5 label-bright">Valor da Peça</label>
             <input type="text" inputmode="decimal" data-field="cash" data-idx="${idx}"
               value="${formatDecimalInput(item.cash)}" placeholder="0,00"
               class="w-full text-right text-sm px-1 py-1.5 rounded touch-target field-line">
           </div>
           <div>
-            <label class="block text-[10px] uppercase tracking-widest mb-0.5" style="color:var(--label-gray)">Mão de Obra</label>
-            <input type="text" inputmode="decimal" data-field="labor" data-idx="${idx}"
-              value="${formatDecimalInput(item.labor)}" placeholder="0,00"
-              class="w-full text-right text-sm px-1 py-1.5 rounded touch-target field-line">
-          </div>
-          <div>
-            <label class="block text-[10px] uppercase tracking-widest mb-0.5" style="color:var(--label-gray)">Total</label>
+            <label class="block text-[10px] uppercase tracking-widest mb-0.5 label-bright">Total</label>
             <div class="text-right text-sm font-medium px-1 py-1.5" data-line-cash="${idx}">${currency(lineTotal)}</div>
           </div>
         </div>
@@ -665,6 +733,7 @@
         const idx = parseInt(ta.dataset.idx, 10);
         state.items[idx].desc = ta.value;
         autoGrow(ta);
+        renderLaborItemsRecap();
         saveState();
         scheduleDrawReceipt();
       });
@@ -688,15 +757,6 @@
       });
     });
 
-    list.querySelectorAll('input[data-field="labor"]').forEach(inp => {
-      inp.addEventListener('input', () => {
-        const idx = parseInt(inp.dataset.idx, 10);
-        state.items[idx].labor = parseDecimal(inp.value);
-        recalc();
-        saveState();
-      });
-    });
-
     list.querySelectorAll('[data-remove]').forEach(btn => {
       btn.addEventListener('click', () => {
         const idx = parseInt(btn.dataset.remove, 10);
@@ -712,7 +772,10 @@
     });
   }
 
-  // ---------- Render da lista de Serviço Terceirizado (opcional) ----------
+  // ---------- Render da lista de Serviço Terceirizado ----------
+  // Cada empresa terceirizada tem, no MESMO cartão: peças e mão de obra lançadas
+  // juntas (nunca em áreas separadas), com os dois totais mostrados sempre
+  // separadamente (Peças x Mão de Obra) além do subtotal daquela empresa.
   function renderOutsourced(){
     const wrap = el('outsourcedWrap');
     const list = el('outsourcedList');
@@ -726,12 +789,14 @@
 
     state.outsourcedItems.forEach((item, idx) => {
       if(!Array.isArray(item.partsList)) item.partsList = [];
+      if(!Array.isArray(item.laborList)) item.laborList = [];
       const card = document.createElement('div');
       card.className = 'print-divider rounded-xl px-3 sm:px-4 py-3';
       card.style.border = '1px solid var(--border-fine)';
 
-      const partsTotal = item.partsList.reduce((s, p) => s + (p.value || 0) + (p.labor || 0), 0);
-      const subtotal = partsTotal;
+      const partsTotal = item.partsList.reduce((s, p) => s + (p.value || 0), 0);
+      const laborTotal = item.laborList.reduce((s, p) => s + (p.value || 0), 0);
+      const subtotal = partsTotal + laborTotal;
 
       const partsRowsHtml = item.partsList.map((p, pIdx) => `
         <div class="mb-2 pb-2" style="border-bottom:1px dashed var(--border-fine)" data-part-row="${pIdx}">
@@ -742,19 +807,29 @@
               placeholder="Nome da peça — Ex: Bomba d'água, Kit de embreagem...">
             <button data-remove-part="${idx}:${pIdx}" class="no-print touch-target rounded-lg hover:bg-zinc-800/60 text-red-400 text-base leading-none shrink-0">🗑</button>
           </div>
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block text-[9px] uppercase tracking-widest mb-0.5" style="color:var(--label-gray)">Valor da Peça</label>
-              <input type="text" inputmode="decimal" data-field="partValue" data-idx="${idx}" data-part-idx="${pIdx}"
-                value="${formatDecimalInput(p.value)}" placeholder="0,00"
-                class="w-full text-right text-sm px-1 py-1.5 rounded touch-target field-line">
-            </div>
-            <div>
-              <label class="block text-[9px] uppercase tracking-widest mb-0.5" style="color:var(--label-gray)">Mão de Obra</label>
-              <input type="text" inputmode="decimal" data-field="partLabor" data-idx="${idx}" data-part-idx="${pIdx}"
-                value="${formatDecimalInput(p.labor)}" placeholder="0,00"
-                class="w-full text-right text-sm px-1 py-1.5 rounded touch-target field-line">
-            </div>
+          <div>
+            <label class="block text-[9px] uppercase tracking-widest mb-0.5 label-bright">Valor da Peça</label>
+            <input type="text" inputmode="decimal" data-field="partValue" data-idx="${idx}" data-part-idx="${pIdx}"
+              value="${formatDecimalInput(p.value)}" placeholder="0,00"
+              class="w-full text-right text-sm px-1 py-1.5 rounded touch-target field-line">
+          </div>
+        </div>
+      `).join('');
+
+      const laborRowsHtml = item.laborList.map((p, lIdx) => `
+        <div class="mb-2 pb-2" style="border-bottom:1px dashed var(--border-fine)" data-labor-row="${lIdx}">
+          <div class="flex items-center gap-2 mb-1.5">
+            <input type="text" data-field="laborName" data-idx="${idx}" data-labor-idx="${lIdx}"
+              value="${escapeHtml(p.name || '')}"
+              class="flex-1 min-w-0 text-sm px-2 py-1.5 rounded touch-target field-line"
+              placeholder="Trabalho — Ex: Alinhamento e balanceamento, Solda especializada...">
+            <button data-remove-labor="${idx}:${lIdx}" class="no-print touch-target rounded-lg hover:bg-zinc-800/60 text-red-400 text-base leading-none shrink-0">🗑</button>
+          </div>
+          <div>
+            <label class="block text-[9px] uppercase tracking-widest mb-0.5 label-bright">Valor da Mão de Obra</label>
+            <input type="text" inputmode="decimal" data-field="laborValue" data-idx="${idx}" data-labor-idx="${lIdx}"
+              value="${formatDecimalInput(p.value)}" placeholder="0,00"
+              class="w-full text-right text-sm px-1 py-1.5 rounded touch-target field-line">
           </div>
         </div>
       `).join('');
@@ -763,7 +838,7 @@
         <div class="flex items-start justify-between gap-3 mb-2">
           <span class="text-xs font-semibold shrink-0 pt-2" style="color:var(--label-gray)">${String(idx+1).padStart(2,'0')}</span>
           <div class="flex-1">
-            <label class="block text-[10px] uppercase tracking-widest mb-0.5" style="color:var(--label-gray)">Tipo de Serviço</label>
+            <label class="block text-[10px] uppercase tracking-widest mb-0.5 label-bright">Tipo de Serviço</label>
             <input type="text" data-field="type" data-idx="${idx}"
               value="${escapeHtml(item.type)}"
               class="w-full text-sm px-2 py-1.5 rounded touch-target field-line"
@@ -772,26 +847,40 @@
           <button data-remove-outsourced="${idx}" class="no-print touch-target rounded-lg hover:bg-zinc-800/60 text-red-400 text-lg leading-none shrink-0">🗑</button>
         </div>
 
-        <div class="pl-0 sm:pl-7 mb-2">
-          <label class="block text-[10px] uppercase tracking-widest mb-0.5" style="color:var(--label-gray)">Empresa Terceirizada</label>
+        <div class="pl-0 sm:pl-7 mb-3">
+          <label class="block text-[10px] uppercase tracking-widest mb-0.5 label-bright">Empresa Terceirizada</label>
           <input type="text" data-field="company" data-idx="${idx}"
             value="${escapeHtml(item.company || '')}"
             class="w-full text-sm px-2 py-1.5 rounded touch-target field-line"
             placeholder="Ex: Nome da empresa prestadora do serviço">
         </div>
 
-        <div class="pl-0 sm:pl-7 mb-2">
+        <div class="pl-0 sm:pl-7 mb-3">
           <div class="flex items-center justify-between mb-1">
-            <label class="block text-[10px] uppercase tracking-widest" style="color:var(--label-gray)">Peças</label>
+            <label class="block text-[10px] uppercase tracking-widest label-bright">🔩 Peças desta Empresa</label>
             <button data-add-part="${idx}" class="no-print btn-metal touch-target px-3 py-1.5 rounded-lg text-xs font-bold shadow hover:brightness-110 active:brightness-95">+1 Peça</button>
           </div>
-          <div data-parts-list="${idx}">${partsRowsHtml}</div>
+          <div data-parts-list="${idx}">${partsRowsHtml || `<p class="text-xs italic" style="color:var(--label-gray)">Nenhuma peça lançada para esta empresa ainda.</p>`}</div>
+          <div class="flex justify-end mt-1">
+            <span class="text-xs font-semibold" style="color:var(--label-gray)">Subtotal Peças: <span class="label-bright" data-line-outsourced-parts="${idx}">${currency(partsTotal)}</span></span>
+          </div>
         </div>
 
-        <div class="flex justify-end pl-0 sm:pl-7">
+        <div class="pl-0 sm:pl-7 mb-2">
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-[10px] uppercase tracking-widest label-bright">🛠️ Mão de Obra desta Empresa</label>
+            <button data-add-labor="${idx}" class="no-print btn-metal touch-target px-3 py-1.5 rounded-lg text-xs font-bold shadow hover:brightness-110 active:brightness-95">+1 Mão de Obra</button>
+          </div>
+          <div data-labor-list="${idx}">${laborRowsHtml || `<p class="text-xs italic" style="color:var(--label-gray)">Nenhuma mão de obra lançada para esta empresa ainda.</p>`}</div>
+          <div class="flex justify-end mt-1">
+            <span class="text-xs font-semibold" style="color:var(--label-gray)">Subtotal Mão de Obra: <span class="label-bright" data-line-outsourced-labor="${idx}">${currency(laborTotal)}</span></span>
+          </div>
+        </div>
+
+        <div class="flex justify-end pl-0 sm:pl-7 pt-2" style="border-top:1px dashed var(--border-fine)">
           <div class="text-right">
-            <label class="block text-[10px] uppercase tracking-widest mb-0.5" style="color:var(--label-gray)">Subtotal</label>
-            <div class="text-sm font-medium" data-line-outsourced="${idx}">${currency(subtotal)}</div>
+            <label class="block text-[10px] uppercase tracking-widest mb-0.5 label-bright">Subtotal desta Empresa (Peças + Mão de Obra)</label>
+            <div class="text-base font-bold metal-text" data-line-outsourced="${idx}">${currency(subtotal)}</div>
           </div>
         </div>
       `;
@@ -836,11 +925,21 @@
       });
     });
 
-    list.querySelectorAll('input[data-field="partLabor"]').forEach(inp => {
+    list.querySelectorAll('input[data-field="laborName"]').forEach(inp => {
       inp.addEventListener('input', () => {
         const idx = parseInt(inp.dataset.idx, 10);
-        const pIdx = parseInt(inp.dataset.partIdx, 10);
-        state.outsourcedItems[idx].partsList[pIdx].labor = parseDecimal(inp.value);
+        const lIdx = parseInt(inp.dataset.laborIdx, 10);
+        state.outsourcedItems[idx].laborList[lIdx].name = inp.value;
+        saveState();
+        scheduleDrawReceipt();
+      });
+    });
+
+    list.querySelectorAll('input[data-field="laborValue"]').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const idx = parseInt(inp.dataset.idx, 10);
+        const lIdx = parseInt(inp.dataset.laborIdx, 10);
+        state.outsourcedItems[idx].laborList[lIdx].value = parseDecimal(inp.value);
         recalcOutsourced();
         saveState();
       });
@@ -850,7 +949,7 @@
       btn.addEventListener('click', () => {
         const idx = parseInt(btn.dataset.addPart, 10);
         if(!Array.isArray(state.outsourcedItems[idx].partsList)) state.outsourcedItems[idx].partsList = [];
-        state.outsourcedItems[idx].partsList.push({ name:'', value:0, labor:0 });
+        state.outsourcedItems[idx].partsList.push({ name:'', value:0 });
         renderOutsourced();
         recalcOutsourced();
         saveState();
@@ -861,6 +960,27 @@
       btn.addEventListener('click', () => {
         const [idx, pIdx] = btn.dataset.removePart.split(':').map(n => parseInt(n, 10));
         state.outsourcedItems[idx].partsList.splice(pIdx, 1);
+        renderOutsourced();
+        recalcOutsourced();
+        saveState();
+      });
+    });
+
+    list.querySelectorAll('[data-add-labor]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.addLabor, 10);
+        if(!Array.isArray(state.outsourcedItems[idx].laborList)) state.outsourcedItems[idx].laborList = [];
+        state.outsourcedItems[idx].laborList.push({ name:'', value:0 });
+        renderOutsourced();
+        recalcOutsourced();
+        saveState();
+      });
+    });
+
+    list.querySelectorAll('[data-remove-labor]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const [idx, lIdx] = btn.dataset.removeLabor.split(':').map(n => parseInt(n, 10));
+        state.outsourcedItems[idx].laborList.splice(lIdx, 1);
         renderOutsourced();
         recalcOutsourced();
         saveState();
@@ -878,39 +998,187 @@
     });
   }
 
+  // Recalcula, por empresa terceirizada, o subtotal de peças, o subtotal de mão
+  // de obra e o subtotal geral daquela empresa — e, no fim, soma tudo de todas
+  // as empresas em dois totais sempre separados (Peças / Mão de Obra) mais o
+  // total geral do bloco Terceirizado.
   function recalcOutsourced(){
-    let totalOutsourced = 0;
+    let totalParts = 0;
+    let totalLabor = 0;
     (state.outsourcedItems || []).forEach((item, idx) => {
-      const partsTotal = (item.partsList || []).reduce((s, p) => s + (p.value || 0) + (p.labor || 0), 0);
-      const sub = partsTotal;
-      totalOutsourced += sub;
+      const partsTotal = (item.partsList || []).reduce((s, p) => s + (p.value || 0), 0);
+      const laborTotal = (item.laborList || []).reduce((s, p) => s + (p.value || 0), 0);
+      const sub = partsTotal + laborTotal;
+      totalParts += partsTotal;
+      totalLabor += laborTotal;
+
+      const partsCell = document.querySelector(`[data-line-outsourced-parts="${idx}"]`);
+      if(partsCell) partsCell.textContent = currency(partsTotal);
+      const laborCell = document.querySelector(`[data-line-outsourced-labor="${idx}"]`);
+      if(laborCell) laborCell.textContent = currency(laborTotal);
       const cell = document.querySelector(`[data-line-outsourced="${idx}"]`);
       if(cell) cell.textContent = currency(sub);
     });
+
+    const totalOutsourced = totalParts + totalLabor;
+    const totalPartsEl = el('totalOutsourcedParts');
+    if(totalPartsEl) totalPartsEl.textContent = currency(totalParts);
+    const totalLaborEl = el('totalOutsourcedLabor');
+    if(totalLaborEl) totalLaborEl.textContent = currency(totalLabor);
     const totalEl = el('totalOutsourced');
     if(totalEl) totalEl.textContent = currency(totalOutsourced);
+
     updateTotalGeral();
     scheduleDrawReceipt();
   }
 
-  // ---------- Totais consolidados (Orçamento próprio + Terceirizado) ----------
+  // ---------- Totais consolidados (Orçamento próprio + Mão de Obra + Terceirizado) ----------
   function computeTotalCash(){
     let total = 0;
-    state.items.forEach(item => { total += (item.qty || 0) * (item.cash || 0) + (item.labor || 0); });
+    state.items.forEach(item => { total += (item.qty || 0) * (item.cash || 0); });
     return total;
   }
 
-  function computeTotalOutsourced(){
+  // Soma a mão de obra de TODAS as empresas terceirizadas (cada empresa já
+  // guarda a sua própria laborList dentro do próprio cartão).
+  function computeTotalOutsourcedLabor(){
     return (state.outsourcedItems || []).reduce((sum, item) => {
-      const partsTotal = (item.partsList || []).reduce((s, p) => s + (p.value || 0) + (p.labor || 0), 0);
+      const laborTotal = (item.laborList || []).reduce((s, p) => s + (p.value || 0), 0);
+      return sum + laborTotal;
+    }, 0);
+  }
+
+  // Soma as peças de TODAS as empresas terceirizadas.
+  function computeTotalOutsourcedParts(){
+    return (state.outsourcedItems || []).reduce((sum, item) => {
+      const partsTotal = (item.partsList || []).reduce((s, p) => s + (p.value || 0), 0);
       return sum + partsTotal;
     }, 0);
   }
 
+  function computeTotalOutsourced(){
+    return computeTotalOutsourcedParts() + computeTotalOutsourcedLabor();
+  }
+
+  function computeTotalLabor(){
+    return (state.laborItems || []).reduce((sum, item) => sum + (item.value || 0), 0);
+  }
+
   function updateTotalGeral(){
-    const totalGeral = computeTotalCash() + computeTotalOutsourced();
+    const totalGeral = computeTotalCash() + computeTotalLabor() + computeTotalOutsourced();
     const geralEl = el('totalGeral');
     if(geralEl) geralEl.textContent = currency(totalGeral);
+  }
+
+  // ---------- Render da recapitulação (somente leitura) dos itens do orçamento ----------
+  function renderLaborItemsRecap(){
+    const wrap = el('laborItemsRecap');
+    if(!wrap) return;
+    wrap.innerHTML = '';
+
+    const itemsWithData = state.items.filter(it => (it.desc && it.desc.trim()) || (it.cash || 0) > 0 || (it.qty || 0) > 1);
+    if(itemsWithData.length === 0){
+      wrap.innerHTML = `<p class="text-xs italic" style="color:var(--label-gray)">Nenhuma peça lançada ainda em "Itens do Orçamento".</p>`;
+      return;
+    }
+
+    itemsWithData.forEach(item => {
+      const lineTotal = (item.qty || 0) * (item.cash || 0);
+      const row = document.createElement('div');
+      row.className = 'rounded-xl px-3 py-2 flex flex-wrap items-center justify-between gap-2';
+      row.style.border = '1px solid var(--border-fine)';
+      row.style.background = 'rgba(255,255,255,0.02)';
+      row.innerHTML = `
+        <span class="text-sm flex-1 min-w-0 truncate label-bright" style="font-weight:500">${escapeHtml(item.desc || '(sem descrição)')}</span>
+        <span class="text-xs shrink-0" style="color:var(--label-gray)">${item.qty || 0} un. × ${currency(item.cash || 0)}</span>
+        <span class="text-sm font-semibold shrink-0 metal-text">${currency(lineTotal)}</span>
+      `;
+      wrap.appendChild(row);
+    });
+  }
+
+  // ---------- Render da lista editável de Mão de Obra ----------
+  function renderLabor(){
+    const list = el('laborList');
+    if(!list) return;
+    list.innerHTML = '';
+
+    (state.laborItems || []).forEach((item, idx) => {
+      const card = document.createElement('div');
+      card.className = 'print-divider rounded-xl px-3 sm:px-4 py-3';
+      card.style.border = '1px solid var(--border-fine)';
+
+      card.innerHTML = `
+        <div class="flex items-start justify-between gap-3 mb-2">
+          <span class="text-xs font-semibold shrink-0 pt-2" style="color:var(--label-gray)">${String(idx+1).padStart(2,'0')}</span>
+          <div class="flex-1">
+            <label class="block text-[10px] uppercase tracking-widest mb-0.5 label-bright">Nome do Trabalho (Mão de Obra)</label>
+            <textarea rows="1" data-field="laborDesc" data-idx="${idx}"
+              class="w-full text-sm leading-snug px-2 py-1.5 rounded touch-target field-line"
+              placeholder="Ex: Retífica completa do motor, Troca da correia dentada...">${escapeHtml(item.desc)}</textarea>
+          </div>
+          <button data-remove-labor="${idx}" class="no-print touch-target rounded-lg hover:bg-zinc-800/60 text-red-400 text-lg leading-none shrink-0">🗑</button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 sm:gap-3 pl-0 sm:pl-7">
+          <div>
+            <label class="block text-[10px] uppercase tracking-widest mb-0.5 label-bright">Valor da Mão de Obra</label>
+            <input type="text" inputmode="decimal" data-field="laborValue" data-idx="${idx}"
+              value="${formatDecimalInput(item.value)}" placeholder="0,00"
+              class="w-full text-right text-sm px-1 py-1.5 rounded touch-target field-line">
+          </div>
+          <div>
+            <label class="block text-[10px] uppercase tracking-widest mb-0.5 label-bright">Total</label>
+            <div class="text-right text-sm font-medium px-1 py-1.5" data-line-labor="${idx}">${currency(item.value || 0)}</div>
+          </div>
+        </div>
+      `;
+      list.appendChild(card);
+    });
+
+    list.querySelectorAll('textarea[data-field="laborDesc"]').forEach(ta => {
+      autoGrow(ta);
+      ta.addEventListener('input', () => {
+        const idx = parseInt(ta.dataset.idx, 10);
+        state.laborItems[idx].desc = ta.value;
+        autoGrow(ta);
+        saveState();
+        scheduleDrawReceipt();
+      });
+    });
+
+    list.querySelectorAll('input[data-field="laborValue"]').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const idx = parseInt(inp.dataset.idx, 10);
+        state.laborItems[idx].value = parseDecimal(inp.value);
+        recalcLabor();
+        saveState();
+      });
+    });
+
+    list.querySelectorAll('[data-remove-labor]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.removeLabor, 10);
+        state.laborItems.splice(idx, 1);
+        renderLabor();
+        recalcLabor();
+        saveState();
+      });
+    });
+  }
+
+  function recalcLabor(){
+    let totalLabor = 0;
+    (state.laborItems || []).forEach((item, idx) => {
+      const v = item.value || 0;
+      totalLabor += v;
+      const cell = document.querySelector(`[data-line-labor="${idx}"]`);
+      if(cell) cell.textContent = currency(v);
+    });
+    const totalEl = el('totalLabor');
+    if(totalEl) totalEl.textContent = currency(totalLabor);
+    updateTotalGeral();
+    scheduleDrawReceipt();
   }
 
   function escapeHtml(str){
@@ -923,13 +1191,14 @@
     let totalCash = 0;
 
     state.items.forEach((item, idx) => {
-      const lc = (item.qty || 0) * (item.cash || 0) + (item.labor || 0);
+      const lc = (item.qty || 0) * (item.cash || 0);
       totalCash += lc;
       const cCell = document.querySelector(`[data-line-cash="${idx}"]`);
       if(cCell) cCell.textContent = currency(lc);
     });
 
     el('totalCash').textContent = currency(totalCash);
+    renderLaborItemsRecap();
     updateTotalGeral();
     scheduleDrawReceipt();
   }
@@ -1024,11 +1293,11 @@
         ctx.fillText('T R A N S P A R Ê N C I A   E   Q U A L I D A D E', padX + logoW + 14, y + 36);
 
         ctx.textAlign = 'right';
-        ctx.fillStyle = '#18181b';
-        ctx.font = '700 16px Arial, sans-serif';
+        ctx.fillStyle = '#000000';
+        ctx.font = '700 17px Arial, sans-serif';
         ctx.fillText(state.docType || 'Orçamento', W - padX, y + 8);
-        ctx.font = '400 11px Arial, sans-serif';
-        ctx.fillStyle = '#71717a';
+        ctx.font = '500 12px Arial, sans-serif';
+        ctx.fillStyle = '#3f3f46';
         ctx.fillText('Nº ' + (state.docNumber || '-'), W - padX, y + 26);
         ctx.fillText(formatDateBR(state.docDate), W - padX, y + 42);
         ctx.textAlign = 'left';
@@ -1054,19 +1323,19 @@
     blocks.push({
       height: 92,
       draw(ctx, y){
-        ctx.fillStyle = '#71717a'; ctx.font = '700 9px Arial, sans-serif';
+        ctx.fillStyle = '#52525b'; ctx.font = '700 9px Arial, sans-serif';
         ctx.fillText('CLIENTE', padX, y + 6);
-        ctx.fillStyle = '#18181b'; ctx.font = '400 13px Arial, sans-serif';
+        ctx.fillStyle = '#000000'; ctx.font = '600 15px Arial, sans-serif';
         ctx.fillText(state.clientName || '-', padX, y + 24);
 
-        ctx.fillStyle = '#71717a'; ctx.font = '700 9px Arial, sans-serif';
+        ctx.fillStyle = '#52525b'; ctx.font = '700 9px Arial, sans-serif';
         ctx.fillText('CONTATO', padX + 320, y + 6);
-        ctx.fillStyle = '#18181b'; ctx.font = '400 13px Arial, sans-serif';
+        ctx.fillStyle = '#000000'; ctx.font = '600 15px Arial, sans-serif';
         ctx.fillText(state.clientPhone || '-', padX + 320, y + 24);
 
-        ctx.fillStyle = '#71717a'; ctx.font = '700 9px Arial, sans-serif';
+        ctx.fillStyle = '#52525b'; ctx.font = '700 9px Arial, sans-serif';
         ctx.fillText('ENDEREÇO / LOCAL', padX, y + 48);
-        ctx.fillStyle = '#18181b'; ctx.font = '400 13px Arial, sans-serif';
+        ctx.fillStyle = '#000000'; ctx.font = '600 15px Arial, sans-serif';
         ctx.fillText(state.clientAddress || '-', padX, y + 66);
 
         ctx.strokeStyle = '#d4d4d8';
@@ -1081,14 +1350,13 @@
     blocks.push({
       height: 30,
       draw(ctx, y){
-        ctx.fillStyle = '#71717a'; ctx.font = '700 10px Arial, sans-serif';
+        ctx.fillStyle = '#000000'; ctx.font = '700 11px Arial, sans-serif';
         ctx.textAlign = 'left';
         ctx.fillText('DESCRIÇÃO', padX, y + 16);
         ctx.textAlign = 'center';
-        ctx.fillText('QTD', W - padX - 230, y + 16);
+        ctx.fillText('QTD', W - padX - 160, y + 16);
         ctx.textAlign = 'right';
-        ctx.fillText('UNIT.', W - padX - 150, y + 16);
-        ctx.fillText('M.OBRA', W - padX - 70, y + 16);
+        ctx.fillText('UNIT.', W - padX - 80, y + 16);
         ctx.fillText('TOTAL', W - padX, y + 16);
         ctx.textAlign = 'left';
       }
@@ -1096,31 +1364,30 @@
 
     // ---- Itens ----
     let totalCash = 0;
-    ctx.font = '400 13px Arial, sans-serif';
+    ctx.font = '500 15px Arial, sans-serif';
     state.items.forEach(item => {
-      const descLines = wrapCanvasText(ctx, item.desc || '(sem descrição)', contentW - 260);
-      const rowH = Math.max(descLines.length * 17, 34) + 18;
-      const lineTotal = (item.qty || 0) * (item.cash || 0) + (item.labor || 0);
+      const descLines = wrapCanvasText(ctx, item.desc || '(sem descrição)', contentW - 190);
+      const rowH = Math.max(descLines.length * 19, 36) + 18;
+      const lineTotal = (item.qty || 0) * (item.cash || 0);
       totalCash += lineTotal;
 
       blocks.push({
         height: rowH,
         draw(ctx, y){
-          ctx.fillStyle = '#18181b';
-          ctx.font = '400 13px Arial, sans-serif';
+          ctx.fillStyle = '#000000';
+          ctx.font = '500 15px Arial, sans-serif';
           ctx.textAlign = 'left';
-          descLines.forEach((line, i) => ctx.fillText(line, padX, y + 14 + i * 17));
+          descLines.forEach((line, i) => ctx.fillText(line, padX, y + 15 + i * 19));
 
           ctx.textAlign = 'center';
-          ctx.fillText(String(item.qty || 0), W - padX - 230, y + 14);
+          ctx.fillText(String(item.qty || 0), W - padX - 160, y + 15);
           ctx.textAlign = 'right';
-          ctx.fillText(currency(item.cash || 0), W - padX - 150, y + 14);
-          ctx.fillText(currency(item.labor || 0), W - padX - 70, y + 14);
-          ctx.font = '700 13px Arial, sans-serif';
-          ctx.fillText(currency(lineTotal), W - padX, y + 14);
+          ctx.fillText(currency(item.cash || 0), W - padX - 80, y + 15);
+          ctx.font = '700 15px Arial, sans-serif';
+          ctx.fillText(currency(lineTotal), W - padX, y + 15);
           ctx.textAlign = 'left';
 
-          ctx.strokeStyle = '#e4e4e7';
+          ctx.strokeStyle = '#c4c4c8';
           ctx.beginPath();
           ctx.moveTo(padX, y + rowH - 6);
           ctx.lineTo(W - padX, y + rowH - 6);
@@ -1140,7 +1407,7 @@
         ctx.stroke();
 
         ctx.textAlign = 'right';
-        ctx.fillStyle = '#3f3f46'; ctx.font = '700 15px Arial, sans-serif';
+        ctx.fillStyle = '#000000'; ctx.font = '700 15px Arial, sans-serif';
         ctx.fillText('TOTAL FRANKLIN AUTO CAR', W - padX - 150, y + 38);
         const g1 = ctx.createLinearGradient(0, y + 20, 0, y + 42);
         g1.addColorStop(0, '#8a6a08'); g1.addColorStop(0.5, '#c8961f'); g1.addColorStop(1, '#5c4406');
@@ -1150,90 +1417,48 @@
       }
     });
 
-    // ---- Serviço Terceirizado (opcional, separado dos serviços próprios) ----
-    if(state.outsourcedItems && state.outsourcedItems.length > 0){
-      let totalOutsourced = 0;
-      ctx.font = '400 13px Arial, sans-serif';
+    // ---- Mão de Obra (própria, separada das peças) ----
+    if(state.laborItems && state.laborItems.length > 0){
+      let totalLabor = 0;
+      ctx.font = '500 15px Arial, sans-serif';
 
       blocks.push({
         height: 34,
         draw(ctx, y){
-          ctx.strokeStyle = '#d4d4d8';
+          ctx.strokeStyle = '#c4c4c8';
           ctx.beginPath();
           ctx.moveTo(padX, y);
           ctx.lineTo(W - padX, y);
           ctx.stroke();
-          ctx.fillStyle = '#71717a'; ctx.font = '700 11px Arial, sans-serif';
+          ctx.fillStyle = '#000000'; ctx.font = '700 12px Arial, sans-serif';
           ctx.textAlign = 'left';
-          ctx.fillText('SERVIÇO TERCEIRIZADO', padX, y + 24);
-
-          ctx.fillStyle = '#71717a'; ctx.font = '700 10px Arial, sans-serif';
+          ctx.fillText('MÃO DE OBRA', padX, y + 24);
           ctx.textAlign = 'right';
-          ctx.fillText('SUBTOTAL', W - padX, y + 24);
+          ctx.fillText('VALOR', W - padX, y + 24);
           ctx.textAlign = 'left';
         }
       });
 
-      state.outsourcedItems.forEach(item => {
-        const partsList = Array.isArray(item.partsList) ? item.partsList : [];
-        const descLines = wrapCanvasText(ctx, item.type || '(sem descrição)', contentW - 180);
-        const hasCompany = !!(item.company && item.company.trim());
-        const companyLines = hasCompany ? wrapCanvasText(ctx, 'Empresa: ' + item.company, contentW - 180) : [];
-        // Cada peça vira uma linha própria: nome + mão de obra à esquerda, valor total (peça + m.obra) à direita
-        const partRows = partsList
-          .filter(p => (p.name && p.name.trim()) || (p.value || 0) > 0 || (p.labor || 0) > 0)
-          .map(p => {
-            const label = 'Peça: ' + (p.name && p.name.trim() ? p.name : '(sem nome)') +
-              '  |  Peça: ' + currency(p.value || 0) + '  |  M.Obra: ' + currency(p.labor || 0);
-            return {
-              lines: wrapCanvasText(ctx, label, contentW - 260),
-              value: (p.value || 0) + (p.labor || 0)
-            };
-          });
-        const partsTotal = partsList.reduce((s, p) => s + (p.value || 0) + (p.labor || 0), 0);
-        const partsLineCount = partRows.reduce((s, r) => s + r.lines.length, 0);
-        const textLineCount = descLines.length + companyLines.length + partsLineCount;
-        const rowH = Math.max(textLineCount * 17, 34) + 18;
-        const subtotal = partsTotal;
-        totalOutsourced += subtotal;
+      state.laborItems.forEach(item => {
+        const descLines = wrapCanvasText(ctx, item.desc || '(sem descrição)', contentW - 130);
+        const rowH = Math.max(descLines.length * 19, 34) + 18;
+        const v = item.value || 0;
+        totalLabor += v;
 
         blocks.push({
           height: rowH,
           draw(ctx, y){
-            ctx.fillStyle = '#18181b';
-            ctx.font = '400 13px Arial, sans-serif';
+            ctx.fillStyle = '#000000';
+            ctx.font = '500 15px Arial, sans-serif';
             ctx.textAlign = 'left';
-            descLines.forEach((line, i) => ctx.fillText(line, padX, y + 14 + i * 17));
-
-            let lineOffset = descLines.length;
-
-            if(hasCompany){
-              ctx.fillStyle = '#71717a';
-              ctx.font = '400 11px Arial, sans-serif';
-              companyLines.forEach((line, i) => ctx.fillText(line, padX, y + 14 + (lineOffset + i) * 17));
-              lineOffset += companyLines.length;
-              ctx.fillStyle = '#18181b';
-              ctx.font = '400 13px Arial, sans-serif';
-            }
-
-            partRows.forEach(row => {
-              ctx.fillStyle = '#71717a';
-              ctx.font = '400 11px Arial, sans-serif';
-              row.lines.forEach((line, i) => ctx.fillText(line, padX, y + 14 + (lineOffset + i) * 17));
-              ctx.textAlign = 'right';
-              ctx.fillText(currency(row.value), W - padX, y + 14 + lineOffset * 17);
-              ctx.textAlign = 'left';
-              lineOffset += row.lines.length;
-              ctx.fillStyle = '#18181b';
-              ctx.font = '400 13px Arial, sans-serif';
-            });
+            descLines.forEach((line, i) => ctx.fillText(line, padX, y + 15 + i * 19));
 
             ctx.textAlign = 'right';
-            ctx.font = '700 13px Arial, sans-serif';
-            ctx.fillText(currency(subtotal), W - padX, y + 14);
+            ctx.font = '700 15px Arial, sans-serif';
+            ctx.fillText(currency(v), W - padX, y + 15);
             ctx.textAlign = 'left';
 
-            ctx.strokeStyle = '#e4e4e7';
+            ctx.strokeStyle = '#c4c4c8';
             ctx.beginPath();
             ctx.moveTo(padX, y + rowH - 6);
             ctx.lineTo(W - padX, y + rowH - 6);
@@ -1243,24 +1468,167 @@
       });
 
       blocks.push({
-        height: 42,
+        height: 56,
         draw(ctx, y){
+          ctx.strokeStyle = '#d4d4d8';
+          ctx.beginPath();
+          ctx.moveTo(padX, y);
+          ctx.lineTo(W - padX, y);
+          ctx.stroke();
+
           ctx.textAlign = 'right';
-          ctx.fillStyle = '#3f3f46'; ctx.font = '700 15px Arial, sans-serif';
-          ctx.fillText('TOTAL TERCEIRIZADO', W - padX - 150, y + 20);
-          const g3 = ctx.createLinearGradient(0, y + 4, 0, y + 24);
-          g3.addColorStop(0, '#8a6a08'); g3.addColorStop(0.5, '#c8961f'); g3.addColorStop(1, '#5c4406');
-          ctx.fillStyle = g3; ctx.font = '700 19px Arial, sans-serif';
-          ctx.fillText(currency(totalOutsourced), W - padX, y + 20);
+          ctx.fillStyle = '#000000'; ctx.font = '700 15px Arial, sans-serif';
+          ctx.fillText('TOTAL MÃO DE OBRA', W - padX - 150, y + 38);
+          const gLabor = ctx.createLinearGradient(0, y + 20, 0, y + 42);
+          gLabor.addColorStop(0, '#8a6a08'); gLabor.addColorStop(0.5, '#c8961f'); gLabor.addColorStop(1, '#5c4406');
+          ctx.fillStyle = gLabor; ctx.font = '700 19px Arial, sans-serif';
+          ctx.fillText(currency(totalLabor), W - padX, y + 38);
           ctx.textAlign = 'left';
         }
       });
     }
 
-    // ---- TOTAL GERAL (Orçamento próprio + Terceirizado) ----
+    // ---- Serviço Terceirizado (opcional, separado dos serviços próprios) ----
+    // Cada empresa terceirizada é impressa como um bloco único, com suas
+    // peças e sua mão de obra juntas (nunca em áreas separadas no papel),
+    // e no fim soma-se tudo em dois totais sempre separados (Peças / Mão de
+    // Obra) mais o total geral do bloco Terceirizado.
+    if(state.outsourcedItems && state.outsourcedItems.length > 0){
+      let totalOutsourcedParts = 0;
+      let totalOutsourcedLaborAll = 0;
+      ctx.font = '500 15px Arial, sans-serif';
+
+      blocks.push({
+        height: 34,
+        draw(ctx, y){
+          ctx.strokeStyle = '#d4d4d8';
+          ctx.beginPath();
+          ctx.moveTo(padX, y);
+          ctx.lineTo(W - padX, y);
+          ctx.stroke();
+          ctx.fillStyle = '#000000'; ctx.font = '700 12px Arial, sans-serif';
+          ctx.textAlign = 'left';
+          ctx.fillText('SERVIÇO TERCEIRIZADO (PEÇAS + MÃO DE OBRA)', padX, y + 24);
+
+          ctx.fillStyle = '#000000'; ctx.font = '700 11px Arial, sans-serif';
+          ctx.textAlign = 'right';
+          ctx.fillText('SUBTOTAL', W - padX, y + 24);
+          ctx.textAlign = 'left';
+        }
+      });
+
+      state.outsourcedItems.forEach(item => {
+        const partsList = Array.isArray(item.partsList) ? item.partsList : [];
+        const laborList = Array.isArray(item.laborList) ? item.laborList : [];
+        const descLines = wrapCanvasText(ctx, item.type || '(sem descrição)', contentW - 180);
+        const hasCompany = !!(item.company && item.company.trim());
+        const companyLines = hasCompany ? wrapCanvasText(ctx, 'Empresa: ' + item.company, contentW - 180) : [];
+
+        // Cada peça e cada trabalho de mão de obra viram uma linha própria:
+        // nome à esquerda, valor à direita — mas sempre marcados por tipo.
+        const partRows = partsList
+          .filter(p => (p.name && p.name.trim()) || (p.value || 0) > 0)
+          .map(p => ({
+            lines: wrapCanvasText(ctx, 'Peça: ' + (p.name && p.name.trim() ? p.name : '(sem nome)'), contentW - 260),
+            value: (p.value || 0)
+          }));
+        const laborRows = laborList
+          .filter(p => (p.name && p.name.trim()) || (p.value || 0) > 0)
+          .map(p => ({
+            lines: wrapCanvasText(ctx, 'Mão de obra: ' + (p.name && p.name.trim() ? p.name : '(sem nome)'), contentW - 260),
+            value: (p.value || 0)
+          }));
+
+        const partsTotal = partsList.reduce((s, p) => s + (p.value || 0), 0);
+        const laborTotal = laborList.reduce((s, p) => s + (p.value || 0), 0);
+        totalOutsourcedParts += partsTotal;
+        totalOutsourcedLaborAll += laborTotal;
+
+        const itemLineCount = partRows.reduce((s, r) => s + r.lines.length, 0) + laborRows.reduce((s, r) => s + r.lines.length, 0);
+        const textLineCount = descLines.length + companyLines.length + itemLineCount;
+        const rowH = Math.max(textLineCount * 17, 34) + 18;
+        const subtotal = partsTotal + laborTotal;
+
+        blocks.push({
+          height: rowH,
+          draw(ctx, y){
+            ctx.fillStyle = '#000000';
+            ctx.font = '500 15px Arial, sans-serif';
+            ctx.textAlign = 'left';
+            descLines.forEach((line, i) => ctx.fillText(line, padX, y + 14 + i * 17));
+
+            let lineOffset = descLines.length;
+
+            if(hasCompany){
+              ctx.fillStyle = '#3f3f46';
+              ctx.font = '500 12px Arial, sans-serif';
+              companyLines.forEach((line, i) => ctx.fillText(line, padX, y + 14 + (lineOffset + i) * 17));
+              lineOffset += companyLines.length;
+              ctx.fillStyle = '#000000';
+              ctx.font = '500 15px Arial, sans-serif';
+            }
+
+            const printRows = (rows) => {
+              rows.forEach(row => {
+                ctx.fillStyle = '#3f3f46';
+                ctx.font = '500 12px Arial, sans-serif';
+                row.lines.forEach((line, i) => ctx.fillText(line, padX, y + 14 + (lineOffset + i) * 17));
+                ctx.textAlign = 'right';
+                ctx.fillText(currency(row.value), W - padX, y + 14 + lineOffset * 17);
+                ctx.textAlign = 'left';
+                lineOffset += row.lines.length;
+                ctx.fillStyle = '#000000';
+                ctx.font = '500 15px Arial, sans-serif';
+              });
+            };
+            printRows(partRows);
+            printRows(laborRows);
+
+            ctx.textAlign = 'right';
+            ctx.font = '700 15px Arial, sans-serif';
+            ctx.fillText(currency(subtotal), W - padX, y + 14);
+            ctx.textAlign = 'left';
+
+            ctx.strokeStyle = '#c4c4c8';
+            ctx.beginPath();
+            ctx.moveTo(padX, y + rowH - 6);
+            ctx.lineTo(W - padX, y + rowH - 6);
+            ctx.stroke();
+          }
+        });
+      });
+
+      blocks.push({
+        height: 34,
+        draw(ctx, y){
+          ctx.textAlign = 'right';
+          ctx.fillStyle = '#3f3f46'; ctx.font = '700 12px Arial, sans-serif';
+          ctx.fillText('Total de Peças (todas as empresas): ' + currency(totalOutsourcedParts), W - padX, y + 14);
+          ctx.fillText('Total de Mão de Obra (todas as empresas): ' + currency(totalOutsourcedLaborAll), W - padX, y + 30);
+          ctx.textAlign = 'left';
+        }
+      });
+
+      blocks.push({
+        height: 42,
+        draw(ctx, y){
+          ctx.textAlign = 'right';
+          ctx.fillStyle = '#000000'; ctx.font = '700 15px Arial, sans-serif';
+          ctx.fillText('TOTAL TERCEIRIZADO', W - padX - 150, y + 20);
+          const g3 = ctx.createLinearGradient(0, y + 4, 0, y + 24);
+          g3.addColorStop(0, '#8a6a08'); g3.addColorStop(0.5, '#c8961f'); g3.addColorStop(1, '#5c4406');
+          ctx.fillStyle = g3; ctx.font = '700 19px Arial, sans-serif';
+          ctx.fillText(currency(totalOutsourcedParts + totalOutsourcedLaborAll), W - padX, y + 20);
+          ctx.textAlign = 'left';
+        }
+      });
+    }
+
+    // ---- TOTAL GERAL (Peças + Mão de Obra + Terceirizado) ----
     {
+      const totalLaborAll = computeTotalLabor();
       const totalOutsourcedAll = computeTotalOutsourced();
-      const totalGeralValue = totalCash + totalOutsourcedAll;
+      const totalGeralValue = totalCash + totalLaborAll + totalOutsourcedAll;
       blocks.push({
         height: 54,
         draw(ctx, y){
@@ -1272,7 +1640,7 @@
 
           ctx.textAlign = 'right';
           ctx.fillStyle = '#8a6a08'; ctx.font = '700 12px Arial, sans-serif';
-          ctx.fillText('TOTAL GERAL (ORÇAMENTO + TERCEIRIZADO)', W - padX, y + 18);
+          ctx.fillText('TOTAL GERAL (PEÇAS + MÃO DE OBRA + TERCEIRIZADO)', W - padX, y + 18);
 
           const g4 = ctx.createLinearGradient(0, y + 24, 0, y + 48);
           g4.addColorStop(0, '#8a6a08'); g4.addColorStop(0.5, '#c8961f'); g4.addColorStop(1, '#5c4406');
@@ -1288,7 +1656,7 @@
       height: 42,
       draw(ctx, y){
         ctx.textAlign = 'right';
-        ctx.fillStyle = '#3f3f46'; ctx.font = '700 15px Arial, sans-serif';
+        ctx.fillStyle = '#000000'; ctx.font = '700 15px Arial, sans-serif';
         ctx.fillText('TOTAL CARTÃO', W - padX - 150, y + 20);
         const g2 = ctx.createLinearGradient(0, y + 4, 0, y + 24);
         g2.addColorStop(0, '#111113'); g2.addColorStop(1, '#52525b');
@@ -1300,7 +1668,7 @@
 
     // ---- Observações (opcional) ----
     if(state.notes && state.notes.trim()){
-      ctx.font = '400 12px Arial, sans-serif';
+      ctx.font = '500 13px Arial, sans-serif';
       const notesLines = wrapCanvasText(ctx, state.notes.trim(), contentW);
       const notesH = 34 + notesLines.length * 16;
       blocks.push({
@@ -1311,9 +1679,9 @@
           ctx.moveTo(padX, y);
           ctx.lineTo(W - padX, y);
           ctx.stroke();
-          ctx.fillStyle = '#71717a'; ctx.font = '700 9px Arial, sans-serif';
+          ctx.fillStyle = '#52525b'; ctx.font = '700 9px Arial, sans-serif';
           ctx.fillText('OBSERVAÇÕES', padX, y + 18);
-          ctx.fillStyle = '#3f3f46'; ctx.font = '400 12px Arial, sans-serif';
+          ctx.fillStyle = '#000000'; ctx.font = '500 13px Arial, sans-serif';
           notesLines.forEach((line, i) => ctx.fillText(line, padX, y + 34 + i * 16));
         }
       });
@@ -1481,9 +1849,17 @@
 
     el('addOutsourcedBtn').addEventListener('click', () => {
       if(!state.outsourcedItems) state.outsourcedItems = [];
-      state.outsourcedItems.push({ type:"", company:"", partsList:[] });
+      state.outsourcedItems.push({ type:"", company:"", partsList:[], laborList:[] });
       renderOutsourced();
       recalcOutsourced();
+      saveState();
+    });
+
+    el('addLaborBtn').addEventListener('click', () => {
+      if(!state.laborItems) state.laborItems = [];
+      state.laborItems.push({ desc:"", value:0 });
+      renderLabor();
+      recalcLabor();
       saveState();
     });
 
@@ -1512,8 +1888,10 @@
     el('totalCardManual').value = formatDecimalInput(state.totalCardManual);
     el('notes').value = state.notes;
     renderItems();
+    renderLabor();
     renderOutsourced();
     recalc();
+    recalcLabor();
     recalcOutsourced();
     drawReceipt();
   }
