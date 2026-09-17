@@ -75,81 +75,53 @@
     letter-spacing:.005em;
   }
 
-  /* ===== CAMADA 1: malha hexagonal / carbono forjado ===== */
+  /* ===== CAMADA 1: textura sutil de carbono (estática, sem animação) ===== */
   body::before{
     content:"";
     position: fixed;
-    inset: -10%;
+    inset: 0;
     z-index: 0;
     pointer-events: none;
     background-image:
-      linear-gradient(60deg, rgba(255,106,0,0.075) 1px, transparent 1px),
-      linear-gradient(-60deg, rgba(255,106,0,0.075) 1px, transparent 1px),
-      linear-gradient(rgba(255,214,0,0.045) 1px, transparent 1px);
-    background-size: 46px 80px, 46px 80px, 100% 80px;
+      linear-gradient(60deg, rgba(255,106,0,0.05) 1px, transparent 1px),
+      linear-gradient(-60deg, rgba(255,106,0,0.05) 1px, transparent 1px);
+    background-size: 46px 80px, 46px 80px;
     mask-image: radial-gradient(ellipse 95% 78% at 50% 16%, #000 6%, transparent 76%);
     -webkit-mask-image: radial-gradient(ellipse 95% 78% at 50% 16%, #000 6%, transparent 76%);
-    animation: meshDrift 26s linear infinite;
-  }
-  @keyframes meshDrift{
-    0%{ transform: translate3d(0,0,0); }
-    100%{ transform: translate3d(0,-80px,0); }
   }
 
-  /* ===== CAMADA 2: vinheta de cabine (estática) ===== */
+  /* ===== CAMADA 2: vinheta suave (estática) ===== */
   body::after{
     content:"";
     position: fixed;
     inset:0;
     z-index: 0;
     pointer-events: none;
-    background: radial-gradient(ellipse 120% 90% at 50% 50%, transparent 52%, rgba(0,0,0,0.72) 100%);
-    opacity:.85;
+    background: radial-gradient(ellipse 120% 90% at 50% 50%, transparent 55%, rgba(0,0,0,0.65) 100%);
   }
-  /* Linhas de varredura em elemento próprio, animadas via transform (GPU),
-     em vez de background-position (que força repintura da tela inteira a
-     cada quadro). Mesmo visual, custo de desempenho muito menor. */
-  #scanLines{
-    position: fixed;
-    top: -120px; left: 0; right: 0; bottom: -120px;
-    z-index: 0;
-    pointer-events: none;
-    background: repeating-linear-gradient(180deg, rgba(255,255,255,0.022) 0px, rgba(255,255,255,0.022) 1px, transparent 1px, transparent 3px);
-    opacity:.85;
-    will-change: transform;
-    animation: scanDrift 9s linear infinite;
-  }
-  @keyframes scanDrift{ 0%{ transform: translate3d(0,0,0); } 100%{ transform: translate3d(0,120px,0); } }
 
   #app{ position: relative; z-index: 1; }
 
   h1,h2,h3,.metal-text,.hud-num{ font-family: var(--font-display); }
 
   /* ================================================================
-     TIPOGRAFIA METÁLICA — ouro líquido em movimento
+     TIPOGRAFIA — dourado elegante (estático)
      ================================================================ */
   .metal-text{
     background: linear-gradient(100deg,
       #ffffff 0%,
-      var(--neon-yellow) 14%,
-      var(--gold) 30%,
-      var(--neon-orange) 48%,
-      var(--gold-2) 64%,
-      var(--neon-yellow) 82%,
+      var(--neon-yellow) 20%,
+      var(--gold) 45%,
+      var(--gold-2) 70%,
       #ffffff 100%);
-    background-size: 300% 300%;
+    background-size: 100% 100%;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
     filter:
       drop-shadow(0 1px 2px rgba(0,0,0,0.9))
-      drop-shadow(0 0 16px rgba(255,122,0,0.5));
+      drop-shadow(0 0 10px rgba(255,180,60,0.35));
     letter-spacing: 0.035em;
-    animation: metalShift 7s ease-in-out infinite;
-  }
-  @keyframes metalShift{
-    0%,100%{ background-position: 12% 50%; }
-    50%{ background-position: 88% 50%; }
   }
   .metal-border{
     border-image: linear-gradient(180deg,#ffffff,var(--neon-orange),var(--gold)) 1;
@@ -178,24 +150,18 @@
   }
 
   /* ================================================================
-     PAINÉIS — blindagem cortada, borda viva e cantos de HUD
+     PAINÉIS — moldura dourada fixa, elegante e sóbria
      ================================================================ */
   .panel{
     position: relative;
     isolation: isolate;
     border: none;
-    /* a própria caixa é a MOLDURA de energia; o ::before desenha o interior */
     background: linear-gradient(135deg,
-      #ffffff 0%,
-      var(--neon-orange) 14%,
-      var(--gold-2) 26%,
-      rgba(255,106,0,0.35) 40%,
-      rgba(255,214,0,0.30) 52%,
-      var(--gold) 68%,
-      var(--neon-yellow) 82%,
-      #ffffff 100%);
-    background-size: 260% 260%;
-    background-position: 10% 50%;
+      rgba(255,214,0,0.9) 0%,
+      var(--gold) 30%,
+      rgba(255,106,0,0.55) 55%,
+      var(--gold-2) 80%,
+      rgba(255,214,0,0.9) 100%);
     clip-path: polygon(
       0 22px, 22px 0,
       calc(100% - 22px) 0, 100% 22px,
@@ -203,9 +169,8 @@
       22px 100%, 0 calc(100% - 22px)
     );
     box-shadow:
-      0 26px 80px -24px rgba(0,0,0,0.95),
-      0 0 60px -20px rgba(255,106,0,0.45) !important;
-    animation: edgeFlow 11s ease-in-out infinite;
+      0 20px 50px -20px rgba(0,0,0,0.9),
+      0 0 30px -14px rgba(255,106,0,0.35) !important;
   }
   /* interior blindado */
   .panel::before{
@@ -213,7 +178,7 @@
     position:absolute; inset:1.6px;
     z-index:-1;
     background:
-      linear-gradient(180deg, rgba(255,150,0,0.075), rgba(0,0,0,0) 30%, rgba(255,214,0,0.05) 100%),
+      linear-gradient(180deg, rgba(255,150,0,0.06), rgba(0,0,0,0) 30%, rgba(255,214,0,0.04) 100%),
       linear-gradient(180deg, #0a0705 0%, #050302 55%, #020101 100%);
     clip-path: polygon(
       0 21px, 21px 0,
@@ -222,10 +187,6 @@
       21px 100%, 0 calc(100% - 21px)
     );
     pointer-events: none;
-  }
-  @keyframes edgeFlow{
-    0%,100%{ background-position: 0% 50%; }
-    50%{ background-position: 100% 50%; }
   }
   /* cantos de HUD + trilho superior */
   .panel::after{
@@ -287,12 +248,7 @@
     width:5px; height:74%;
     border-radius:2px;
     background:linear-gradient(180deg,var(--neon-yellow),var(--neon-orange) 55%,var(--gold));
-    box-shadow:0 0 14px rgba(255,106,0,.9), 0 0 3px rgba(255,255,255,.7);
-    animation:barPulse 2.6s ease-in-out infinite;
-  }
-  @keyframes barPulse{
-    0%,100%{ box-shadow:0 0 10px rgba(255,106,0,.6), 0 0 3px rgba(255,255,255,.5); }
-    50%{ box-shadow:0 0 22px rgba(255,180,0,1), 0 0 6px rgba(255,255,255,.9); }
+    box-shadow:0 0 14px rgba(255,106,0,.75), 0 0 3px rgba(255,255,255,.6);
   }
 
   textarea{ resize: none; overflow:hidden; }
@@ -352,14 +308,15 @@
     position:absolute; top:-60%; bottom:-60%; left:-40%;
     width:32%;
     background:linear-gradient(100deg, transparent, rgba(255,255,255,.95), transparent);
-    transform:skewX(-22deg) translateX(-140%);
-    animation: shineSweep 4.6s ease-in-out infinite;
+    transform:skewX(-22deg) translateX(-160%);
     pointer-events:none;
     mix-blend-mode:screen;
   }
+  .btn-metal:hover::after{
+    animation: shineSweep 0.9s ease-in-out;
+  }
   @keyframes shineSweep{
     0%{ transform:skewX(-22deg) translateX(-160%); }
-    55%{ transform:skewX(-22deg) translateX(420%); }
     100%{ transform:skewX(-22deg) translateX(420%); }
   }
   .btn-metal:hover{
@@ -553,7 +510,7 @@
   }
 
   /* ================================================================
-     FUNDO ANIMADO — auroras, brasas e estrelas neon
+     FUNDO — brilho quente estático (sem estrelas, feixes ou nebulosas)
      ================================================================ */
   #cosmic-bg{
     position: fixed;
@@ -562,82 +519,18 @@
     overflow: hidden;
     pointer-events: none;
   }
-  .cosmic-layer{ position: absolute; inset: -14%; will-change: transform; }
-  .cosmic-nebula-1{
-    background:
-      radial-gradient(ellipse 55% 38% at 16% 26%, rgba(255,106,0,0.26), transparent 62%),
-      radial-gradient(ellipse 48% 34% at 84% 74%, rgba(255,150,0,0.17), transparent 65%),
-      radial-gradient(ellipse 42% 30% at 55% 92%, rgba(255,51,0,0.16), transparent 62%);
-    filter: blur(8px);
-    animation: nebulaDrift1 22s ease-in-out infinite alternate;
-  }
-  .cosmic-nebula-2{
-    background:
-      radial-gradient(ellipse 42% 26% at 74% 16%, rgba(255,255,255,0.09), transparent 60%),
-      radial-gradient(ellipse 38% 40% at 20% 80%, rgba(255,106,0,0.15), transparent 62%),
-      conic-gradient(from 210deg at 50% 50%, rgba(255,106,0,0.05), rgba(0,0,0,0) 28%, rgba(255,214,0,0.05) 55%, rgba(0,0,0,0) 80%);
-    filter: blur(6px);
-    animation: nebulaDrift2 28s ease-in-out infinite alternate;
-  }
-  @keyframes nebulaDrift1{ 0%{ transform: translate(0,0) scale(1); } 100%{ transform: translate(3%,-3%) scale(1.08); } }
-  @keyframes nebulaDrift2{ 0%{ transform: translate(0,0) scale(1); } 100%{ transform: translate(-4%,3%) scale(1.06); } }
-
-  .cosmic-stars{
-    background-image:
-      radial-gradient(1.6px 1.6px at 10% 20%, rgba(255,214,0,0.95) 50%, transparent 51%),
-      radial-gradient(1.2px 1.2px at 30% 70%, rgba(255,255,255,0.8) 50%, transparent 51%),
-      radial-gradient(1.8px 1.8px at 60% 40%, rgba(255,106,0,0.9) 50%, transparent 51%),
-      radial-gradient(1.2px 1.2px at 80% 15%, rgba(255,255,255,0.75) 50%, transparent 51%),
-      radial-gradient(1.8px 1.8px at 92% 85%, rgba(255,214,0,0.85) 50%, transparent 51%),
-      radial-gradient(1.2px 1.2px at 45% 92%, rgba(255,255,255,0.65) 50%, transparent 51%),
-      radial-gradient(1.2px 1.2px at 15% 55%, rgba(255,106,0,0.75) 50%, transparent 51%),
-      radial-gradient(1.8px 1.8px at 65% 65%, rgba(255,255,255,0.75) 50%, transparent 51%),
-      radial-gradient(1.2px 1.2px at 5% 85%, rgba(255,214,0,0.75) 50%, transparent 51%),
-      radial-gradient(1.6px 1.6px at 95% 40%, rgba(255,255,255,0.75) 50%, transparent 51%);
-    background-repeat: repeat;
-    background-size: 240px 240px;
-    opacity: 0.9;
-    animation: starsTwinkle 3.2s ease-in-out infinite alternate;
-  }
-  @keyframes starsTwinkle{ 0%{ opacity:.6; } 100%{ opacity:1; } }
-
-  /* feixes diagonais de velocidade */
-  .cosmic-beams{
-    background:
-      repeating-linear-gradient(115deg,
-        rgba(255,106,0,0) 0px,
-        rgba(255,106,0,0) 140px,
-        rgba(255,150,0,0.08) 141px,
-        rgba(255,214,0,0.05) 146px,
-        rgba(255,106,0,0) 150px);
-    mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, #000 10%, transparent 80%);
-    -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, #000 10%, transparent 80%);
-    animation: beamsSlide 18s linear infinite;
-  }
-  @keyframes beamsSlide{
-    0%{ transform: translate3d(-6%,0,0); }
-    100%{ transform: translate3d(6%,0,0); }
-  }
-
-  /* horizonte incandescente inferior */
   .cosmic-horizon{
     position:absolute;
     left:-10%; right:-10%; bottom:-6%;
     height:34%;
     background:
-      radial-gradient(ellipse 60% 100% at 50% 100%, rgba(255,106,0,0.35), transparent 70%),
-      linear-gradient(0deg, rgba(255,51,0,0.22), transparent 78%);
+      radial-gradient(ellipse 60% 100% at 50% 100%, rgba(255,106,0,0.28), transparent 70%),
+      linear-gradient(0deg, rgba(255,51,0,0.16), transparent 78%);
     filter: blur(10px);
-    animation: horizonBreath 7s ease-in-out infinite alternate;
-  }
-  @keyframes horizonBreath{
-    0%{ opacity:.55; transform:scaleY(.94); }
-    100%{ opacity:1; transform:scaleY(1.06); }
   }
 
   @media print{
     #cosmic-bg{ display:none !important; }
-    #scanLines{ display:none !important; }
   }
 
   /* ================================================================
@@ -662,27 +555,14 @@
     width:min(86vw, 560px);
     aspect-ratio:1;
     border-radius:50%;
-    background: conic-gradient(from 0deg,
-      rgba(255,106,0,0) 0deg,
-      rgba(255,106,0,.32) 60deg,
-      rgba(255,230,0,.22) 120deg,
-      rgba(255,106,0,0) 200deg,
-      rgba(255,214,0,.25) 300deg,
-      rgba(255,106,0,0) 360deg);
+    background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(255,150,0,.22), transparent 70%);
     filter: blur(28px);
-    animation: portalSpin 16s linear infinite;
     pointer-events:none;
   }
-  @keyframes portalSpin{ to{ transform: rotate(360deg); } }
   #loginForm{ position:relative; z-index:2; }
   #loginLogo{
     border-radius:10px;
-    filter: drop-shadow(0 0 22px rgba(255,120,0,0.55)) drop-shadow(0 6px 12px rgba(0,0,0,0.85));
-    animation: logoBreath 4.5s ease-in-out infinite;
-  }
-  @keyframes logoBreath{
-    0%,100%{ filter: drop-shadow(0 0 16px rgba(255,120,0,0.4)) drop-shadow(0 6px 12px rgba(0,0,0,0.85)); }
-    50%{ filter: drop-shadow(0 0 32px rgba(255,180,0,0.8)) drop-shadow(0 6px 12px rgba(0,0,0,0.85)); }
+    filter: drop-shadow(0 0 22px rgba(255,120,0,0.5)) drop-shadow(0 6px 12px rgba(0,0,0,0.85));
   }
   #app.locked{ display:none; }
   @keyframes shakeX{
@@ -810,13 +690,7 @@
 </head>
 <body class="min-h-screen text-zinc-200 pb-24">
 
-<div id="scanLines" aria-hidden="true"></div>
-
 <div id="cosmic-bg" aria-hidden="true">
-  <div class="cosmic-layer cosmic-nebula-1"></div>
-  <div class="cosmic-layer cosmic-nebula-2"></div>
-  <div class="cosmic-layer cosmic-stars"></div>
-  <div class="cosmic-layer cosmic-beams"></div>
   <div class="cosmic-horizon"></div>
 </div>
 
