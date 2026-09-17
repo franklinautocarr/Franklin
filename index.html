@@ -96,20 +96,30 @@
     100%{ transform: translate3d(0,-80px,0); }
   }
 
-  /* ===== CAMADA 2: linhas de varredura + vinheta de cabine ===== */
+  /* ===== CAMADA 2: vinheta de cabine (estática) ===== */
   body::after{
     content:"";
     position: fixed;
     inset:0;
     z-index: 0;
     pointer-events: none;
-    background:
-      repeating-linear-gradient(180deg, rgba(255,255,255,0.022) 0px, rgba(255,255,255,0.022) 1px, transparent 1px, transparent 3px),
-      radial-gradient(ellipse 120% 90% at 50% 50%, transparent 52%, rgba(0,0,0,0.72) 100%);
+    background: radial-gradient(ellipse 120% 90% at 50% 50%, transparent 52%, rgba(0,0,0,0.72) 100%);
     opacity:.85;
+  }
+  /* Linhas de varredura em elemento próprio, animadas via transform (GPU),
+     em vez de background-position (que força repintura da tela inteira a
+     cada quadro). Mesmo visual, custo de desempenho muito menor. */
+  #scanLines{
+    position: fixed;
+    top: -120px; left: 0; right: 0; bottom: -120px;
+    z-index: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(180deg, rgba(255,255,255,0.022) 0px, rgba(255,255,255,0.022) 1px, transparent 1px, transparent 3px);
+    opacity:.85;
+    will-change: transform;
     animation: scanDrift 9s linear infinite;
   }
-  @keyframes scanDrift{ 0%{ background-position:0 0, 0 0; } 100%{ background-position:0 120px, 0 0; } }
+  @keyframes scanDrift{ 0%{ transform: translate3d(0,0,0); } 100%{ transform: translate3d(0,120px,0); } }
 
   #app{ position: relative; z-index: 1; }
 
@@ -552,7 +562,7 @@
     overflow: hidden;
     pointer-events: none;
   }
-  .cosmic-layer{ position: absolute; inset: -14%; }
+  .cosmic-layer{ position: absolute; inset: -14%; will-change: transform; }
   .cosmic-nebula-1{
     background:
       radial-gradient(ellipse 55% 38% at 16% 26%, rgba(255,106,0,0.26), transparent 62%),
@@ -627,6 +637,7 @@
 
   @media print{
     #cosmic-bg{ display:none !important; }
+    #scanLines{ display:none !important; }
   }
 
   /* ================================================================
@@ -798,6 +809,8 @@
 </style>
 </head>
 <body class="min-h-screen text-zinc-200 pb-24">
+
+<div id="scanLines" aria-hidden="true"></div>
 
 <div id="cosmic-bg" aria-hidden="true">
   <div class="cosmic-layer cosmic-nebula-1"></div>
@@ -1600,7 +1613,21 @@
   }
 
   // ---------- Render da recapitulação (somente leitura) dos itens do orçamento ----------
+  // Esta função era chamada de forma síncrona a cada tecla digitada em qualquer
+  // campo de item (descrição, unidades, valor), recriando toda a lista via
+  // innerHTML a cada caractere — isso é o que causava a lentidão/travamento ao
+  // digitar. Agora as chamadas são agrupadas (coalescidas) em 1 única
+  // reconstrução por frame de animação, sem alterar nenhum comportamento visual.
+  let _recapRenderQueued = false;
   function renderLaborItemsRecap(){
+    if(_recapRenderQueued) return;
+    _recapRenderQueued = true;
+    requestAnimationFrame(() => {
+      _recapRenderQueued = false;
+      _renderLaborItemsRecapNow();
+    });
+  }
+  function _renderLaborItemsRecapNow(){
     const wrap = el('laborItemsRecap');
     if(!wrap) return;
     wrap.innerHTML = '';
